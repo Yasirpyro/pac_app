@@ -541,7 +541,7 @@ Example output:
 "Paying now leaves only $620 before your rent is due on Feb 16. Waiting until payday on Feb 19 keeps a healthy $1,420 buffer."
 ```
 
-**Model:** Claude Haiku 4 (fast, cost-effective for hackathon)  
+**Model:** Gemini 2.5 Flash (fast, cost-effective for hackathon)  
 **Max tokens:** 100  
 **Temperature:** 0.3 (low variability, consistent tone)
 
@@ -922,7 +922,7 @@ When `settings.demo_mode = 1`:
 
 **Slide 7: Technical Architecture**
 - Flutter Android app, SQLite local storage
-- Rule-based logic + optional LLM rationale (Claude Haiku)
+- Rule-based logic + optional LLM rationale (Gemini 2.5 Flash)
 - DEMO_MODE: Works offline with cached responses
 - 12 screens, 6 tables, 20-scenario eval suite
 

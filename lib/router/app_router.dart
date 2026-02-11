@@ -17,13 +17,14 @@ import '../presentation/screens/settings/audit_log_screen.dart';
 import '../presentation/screens/settings/about_screen.dart';
 import 'app_shell.dart';
 
-final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
+final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<NavigatorState> _shellNavigatorKey = GlobalKey<NavigatorState>();
 
-GoRouter createAppRouter() {
+GoRouter createAppRouter(Listenable settingsListenable) {
   return GoRouter(
-    navigatorKey: _rootNavigatorKey,
+    navigatorKey: rootNavigatorKey,
     initialLocation: '/home',
+    refreshListenable: settingsListenable,
     redirect: (context, state) {
       final settingsProvider = context.read<SettingsProvider>();
       final isMaintenanceMode = settingsProvider.isMaintenanceMode;
@@ -38,7 +39,12 @@ GoRouter createAppRouter() {
           '/settings/audit-log',
           '/settings/about',
         ];
-        if (!allowedInMaintenance.contains(state.uri.path)) {
+
+        final path = state.uri.path;
+        final isAllowed = allowedInMaintenance.any((allowed) =>
+            path == allowed || path.startsWith('$allowed/'));
+
+        if (!isAllowed) {
           return '/maintenance';
         }
       }
@@ -79,7 +85,7 @@ GoRouter createAppRouter() {
       // Full-screen routes (no bottom nav)
       GoRoute(
         path: '/bills/:id',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final id = int.parse(state.pathParameters['id']!);
           return BillDetailScreen(billId: id);
@@ -87,12 +93,12 @@ GoRouter createAppRouter() {
       ),
       GoRoute(
         path: '/add-bill',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const AddBillScreen(),
       ),
       GoRoute(
         path: '/edit-bill/:id',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final id = int.parse(state.pathParameters['id']!);
           return EditBillScreen(billId: id);
@@ -100,7 +106,7 @@ GoRouter createAppRouter() {
       ),
       GoRoute(
         path: '/payment/confirm/:billId',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final billId = int.parse(state.pathParameters['billId']!);
           final scheduledDate = state.uri.queryParameters['date'];
@@ -114,7 +120,7 @@ GoRouter createAppRouter() {
       ),
       GoRoute(
         path: '/payment/success',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>? ?? {};
           return PaymentSuccessScreen(
@@ -122,12 +128,13 @@ GoRouter createAppRouter() {
             amount: extra['amount'] as double? ?? 0.0,
             payeeName: extra['payeeName'] as String? ?? '',
             scheduledDate: extra['scheduledDate'] as DateTime? ?? DateTime.now(),
+            isPayNow: extra['isPayNow'] as bool? ?? false,
           );
         },
       ),
       GoRoute(
         path: '/maintenance/queue/:billId',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final billId = int.parse(state.pathParameters['billId']!);
           return QueuePaymentScreen(billId: billId);
@@ -135,17 +142,17 @@ GoRouter createAppRouter() {
       ),
       GoRoute(
         path: '/settings/cashflow',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const CashflowInputsScreen(),
       ),
       GoRoute(
         path: '/settings/audit-log',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const AuditLogScreen(),
       ),
       GoRoute(
         path: '/settings/about',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const AboutScreen(),
       ),
     ],

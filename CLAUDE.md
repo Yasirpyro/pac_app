@@ -19,8 +19,8 @@ If something conflicts, follow priority:
 1) PRD → 2) AppFlow → 3) BackendStructure → 4) FrontendGuidelines → 5) TechStack → 6) ImplementationPlan
 
 ## Tech Stack (lock these)
-Flutter 3.38.9 | Dart 3.10.8  
-provider 6.1.4 | go_router 17.1.0 | sqflite 2.4.2 | http 1.6.0 | intl 0.20.2 | uuid 4.5.2 | local_auth 3.0.0  
+Flutter 3.38.9 | Dart 3.10.8
+provider 6.1.4 | go_router 17.1.0 | sqflite 2.4.2 | http 1.6.0 | intl 0.20.2 | uuid 4.5.2 | local_auth 3.0.0 | google_generative_ai 0.4.7  
 Android: minSdk 24, targetSdk 35
 
 ## Non-Negotiables (Hackathon Constraints)

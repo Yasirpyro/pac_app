@@ -1051,85 +1051,82 @@ flutter test test/services/recommendation_service_test.dart
 Create `lib/data/services/ai_service.dart`:
 
 ```dart
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+  import 'package:google_generative_ai/google_generative_ai.dart';
+  import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-class AIService {
-  static const String _baseUrl = 'https://api.anthropic.com/v1/messages';
-  static const String _model = 'claude-haiku-4-5';
-  static const int _timeoutSeconds = 3;
-  
-  final String? apiKey;
-  final bool demoMode;
-  
-  AIService({this.apiKey, this.demoMode = true});
+  class AIService {
+    static const int _timeoutSeconds = 10;
 
-  Future<String> generateRationale({
-    required String payee,
-    required double amount,
-    required String dueDate,
-    required double currentBalance,
-    required String nextPayday,
-    required double safetyBuffer,
-    required String recommendation,
-  }) async {
-    // If demo mode or no API key, use cached response
-    if (demoMode || apiKey == null || apiKey!.isEmpty) {
-      return _getCachedRationale(recommendation, currentBalance, amount, safetyBuffer);
-    }
-    
-    try {
-      final prompt = _buildPrompt(
-        payee: payee,
-        amount: amount,
-        dueDate: dueDate,
-        currentBalance: currentBalance,
-        nextPayday: nextPayday,
-        safetyBuffer: safetyBuffer,
-        recommendation: recommendation,
-      );
-      
-      final response = await http.post(
-        Uri.parse(_baseUrl),
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey!,
-          'anthropic-version': '2024-01-01',
-        },
-        body: jsonEncode({
-          'model': _model,
-          'max_tokens': 100,
-          'messages': [
-            {'role': 'user', 'content': prompt}
-          ],
-        }),
-      ).timeout(Duration(seconds: _timeoutSeconds));
-      
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data['content'][0]['text'];
+    final SettingsDao _settingsDao;
+
+    AIService({required SettingsDao settingsDao}) : _settingsDao = settingsDao;
+
+    Future<String> generateRationale({
+      required String payee,
+      required double amount,
+      required String dueDate,
+      required double currentBalance,
+      required String nextPayday,
+      required double safetyBuffer,
+      required String recommendation,
+      List<Map<String, dynamic>>? upcomingPayments,
+    }) async {
+      // Check if demo mode is enabled
+      final settings = await _settingsDao.getSettings();
+      if (settings.demoMode) {
+        return _getCachedRationale(
+          recommendation: recommendation,
+          amount: amount,
+          currentBalance: currentBalance,
+          safetyBuffer: safetyBuffer,
+        );
       }
-    } catch (e) {
-      // Fall back to cached response on error
+
+      try {
+        return await _callGeminiAPI(
+          payee: payee,
+          amount: amount,
+          dueDate: dueDate,
+          currentBalance: currentBalance,
+          nextPayday: nextPayday,
+          safetyBuffer: safetyBuffer,
+          recommendation: recommendation,
+          upcomingPayments: upcomingPayments,
+        ).timeout(const Duration(seconds: _timeoutSeconds));
+      } catch (e) {
+        return _getCachedRationale(
+          recommendation: recommendation,
+          amount: amount,
+          currentBalance: currentBalance,
+          safetyBuffer: safetyBuffer,
+        );
+      }
     }
-    
-    return _getCachedRationale(recommendation, currentBalance, amount, safetyBuffer);
-  }
 
-  String _buildPrompt({...}) {
-    return '''
-You are a helpful financial assistant. Generate a brief explanation (max 50 words) for this payment recommendation.
+    Future<String> _callGeminiAPI({
+      required String payee,
+      required double amount,
+      required String dueDate,
+      required double currentBalance,
+      required String nextPayday,
+      required double safetyBuffer,
+      required String recommendation,
+      List<Map<String, dynamic>>? upcomingPayments,
+    }) async {
+      final apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
+      if (apiKey.isEmpty) throw Exception('No API key');
 
-Bill: $payee \$$amount due $dueDate
-Balance: \$$currentBalance
-Next payday: $nextPayday
-Safety buffer: \$$safetyBuffer
+      final model = GenerativeModel(
+        model: 'gemini-1.5-flash',
+        apiKey: apiKey,
+      );
 
-Recommendation: $recommendation
+      final prompt = '''...'''; // Prompt construction
+      final content = [Content.text(prompt)];
+      final response = await model.generateContent(content);
 
-Explain why this timing is best. Be friendly and specific.
-''';
-  }
+      return response.text?.trim() ?? _getCachedRationale(...);
+    }
 
   String _getCachedRationale(String recommendation, double balance, double amount, double buffer) {
     final remaining = balance - amount - buffer;

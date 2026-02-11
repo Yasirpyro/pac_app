@@ -40,7 +40,7 @@
 
 ## Slide 7: Technical Architecture
 - **Stack:** Flutter (Android), SQLite (Local Storage).
-- **AI:** Rule-based heuristic engine + Claude Haiku 4.5 (via API) for rationale.
+- **AI:** Rule-based heuristic engine + Gemini 2.5 Flash (via API) for rationale.
 - **Resilience:** Offline-first (`DEMO_MODE`), Local caching.
 
 ## Slide 8: Roadmap & Vision

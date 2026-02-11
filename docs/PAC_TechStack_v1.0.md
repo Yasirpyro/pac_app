@@ -42,9 +42,9 @@ For a 4-day hackathon MVP targeting Android, a monolithic Flutter application pr
 │  └───────────────────────────────────────────────────┘         │
 │         ↓                                    ↓                  │
 │  ┌─────────────┐                    ┌─────────────────┐        │
-│  │ Anthropic   │                    │ SQLite Database │        │
-│  │ Claude API  │                    │ (sqflite)       │        │
-│  │ (Optional)  │                    │                 │        │
+│  │ Gemini API  │                    │ SQLite Database │        │
+│  │ (Google)    │                    │ (sqflite)       │        │
+│  │             │                    │                 │        │
 │  └─────────────┘                    └─────────────────┘        │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -485,141 +485,81 @@ final GoRouter appRouter = GoRouter(
 
 ## 6. AI / LLM Integration
 
-### Anthropic Claude API
+### Google Gemini API
 | Attribute | Value |
 |-----------|-------|
-| **Provider** | Anthropic |
-| **Model** | claude-haiku-4-5 |
-| **Model ID (versioned)** | claude-haiku-4-5-20251001 |
-| **API Documentation** | https://docs.anthropic.com/claude/reference |
-| **Pricing** | ~$0.25/1M input tokens, ~$1.25/1M output tokens |
+| **Provider** | Google |
+| **Model** | Gemini 2.5 Flash |
+| **Model ID** | gemini-1.5-flash |
+| **package** | google_generative_ai |
+| **Version** | 0.2.2 |
+| **Pricing** | Free tier available (suitable for hackathon) |
 | **License** | Commercial (API Terms of Service) |
 
 **Reason for Selection:**
-- **Speed:** Haiku is optimized for low-latency responses (<1s typical)
-- **Cost:** Most affordable Claude model for hackathon budget
-- **Quality:** Sufficient for generating 50-word rationale text
-- **Safety:** Built-in content filtering; aligns with responsible AI goals
+- **Speed:** Flash is optimized for high-frequency, low-latency tasks.
+- **Cost:** Generous free tier for development/hackathons.
+- **Integration:** Official Dart SDK (`google_generative_ai`) provides type-safe access without manual HTTP handling.
+- **Multimodal:** Capable of handling text inputs efficiently (and images if needed later).
 
 **Alternatives Considered:**
 | Alternative | Reason Rejected |
 |-------------|-----------------|
-| GPT-4o-mini | Similar capability, but team prefers Anthropic API |
-| Claude Sonnet | Overkill for simple rationale generation; higher cost |
-| Local LLM (Llama) | Too slow on mobile; requires significant setup |
-| Gemini | Less familiar API; limited hackathon time for learning |
+| Claude Haiku | Requires manual HTTP handling or 3rd party package; Gemini has official Dart SDK. |
+| GPT-4o-mini | Similar capability, but Gemini integration in Flutter is currently very streamlined. |
+| Local LLM (Llama) | Too slow on mobile; requires significant setup. |
 
-**HTTP Client for API Calls:**
+**Dependencies:**
 | Attribute | Value |
 |-----------|-------|
-| **Package** | http |
-| **Version** | 1.6.0 |
-| **Pub.dev** | https://pub.dev/packages/http |
-| **License** | BSD-3-Clause |
+| **Package** | google_generative_ai |
+| **Version** | 0.2.2 |
+| **Pub.dev** | https://pub.dev/packages/google_generative_ai |
+| **Env Mgmt** | flutter_dotenv ^5.1.0 |
 
 **Installation:**
 ```yaml
 dependencies:
-  http: ^1.6.0
+  google_generative_ai: ^0.2.2
+  flutter_dotenv: ^5.1.0
 ```
 
 **AI Service Implementation:**
 ```dart
-// lib/services/ai_service.dart
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+// lib/data/services/ai_service.dart
+import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AIService {
-  static const String _baseUrl = 'https://api.anthropic.com/v1/messages';
-  static const String _model = 'claude-haiku-4-5';
-  static const int _timeoutSeconds = 3;
-  
-  // API key should be stored securely - for demo, using environment variable
-  static String? _apiKey;
-  
-  static void initialize(String apiKey) {
-    _apiKey = apiKey;
-  }
-  
-  static Future<String> generateRationale({
+  // ... (Initialization)
+
+  Future<String> _callGeminiAPI({
     required String payee,
     required double amount,
-    required String dueDate,
-    required double currentBalance,
-    required String nextPayday,
-    required double safetyBuffer,
-    required String recommendation,
-    List<Map<String, dynamic>>? upcomingPayments,
+    // ... other params
   }) async {
-    // If no API key or demo mode, use cached response
-    if (_apiKey == null || _apiKey!.isEmpty) {
-      return _getCachedRationale(recommendation);
-    }
-    
-    final prompt = '''
-You are a helpful financial assistant for a banking app. Generate a brief, friendly explanation (max 50 words) for why we recommend this payment timing.
+    final apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
+    if (apiKey.isEmpty) throw Exception('API Key not found');
 
-Context:
-- Bill: $payee \$${amount.toStringAsFixed(2)} due $dueDate
-- Current balance: \$${currentBalance.toStringAsFixed(2)}
-- Next payday: $nextPayday
-- Safety buffer: \$${safetyBuffer.toStringAsFixed(2)}
-- Known upcoming: ${upcomingPayments?.map((p) => '${p['name']} \$${p['amount']}').join(', ') ?? 'None'}
+    final model = GenerativeModel(
+      model: 'gemini-1.5-flash',
+      apiKey: apiKey,
+    );
 
-Recommendation: $recommendation
+    final prompt = '''...'''; // Prompt construction
+    final content = [Content.text(prompt)];
+    final response = await model.generateContent(content);
 
-Generate explanation focusing on the main factor (buffer, timing, upcoming obligations). Use simple language. Start with "Why?" or directly explain.
-''';
-
-    try {
-      final response = await http.post(
-        Uri.parse(_baseUrl),
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': _apiKey!,
-          'anthropic-version': '2024-01-01',
-        },
-        body: jsonEncode({
-          'model': _model,
-          'max_tokens': 100,
-          'messages': [
-            {'role': 'user', 'content': prompt}
-          ],
-        }),
-      ).timeout(Duration(seconds: _timeoutSeconds));
-      
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data['content'][0]['text'] ?? _getCachedRationale(recommendation);
-      } else {
-        return _getCachedRationale(recommendation);
-      }
-    } catch (e) {
-      // Timeout or network error - fall back to cache
-      return _getCachedRationale(recommendation);
-    }
-  }
-  
-  static String _getCachedRationale(String recommendation) {
-    // Cached responses for demo mode
-    final Map<String, String> cachedRationales = {
-      'pay_now': 'Paying now is safe! Your balance comfortably covers this bill while maintaining your safety buffer for other expenses.',
-      'schedule_payday': 'Waiting until payday is smarter here. Paying now would leave you with less cushion for upcoming obligations.',
-      'remind_later': 'This bill is due soon, but we need more information to give you the best recommendation. Please review manually.',
-    };
-    
-    return cachedRationales[recommendation] ?? 
-      'This timing helps maintain your safety buffer and avoids conflicts with other payments.';
+    return response.text?.trim() ?? _getCachedRationale(...);
   }
 }
 ```
 
 ### Demo Mode / Caching Strategy
 For hackathon reliability, the app operates in "Demo Mode" by default:
-- **10 pre-generated rationale responses** cover common scenarios
-- **3-second timeout** on API calls; falls back to cache on failure
-- **Visual indicator** shows "🎭 Demo Mode" badge when using cached responses
-- **Audit logging** records whether AI response was live or cached
+- **Cached rationale responses** cover common scenarios.
+- **Timeout** on API calls falls back to cache.
+- **Visual indicator** shows "🎭 Demo Mode" badge.
 
 **Cached Scenario Coverage:**
 1. Pay now - healthy buffer
@@ -1224,8 +1164,9 @@ dependencies:
   path: ^1.9.0
   shared_preferences: ^2.5.4
 
-  # Networking (for AI API)
-  http: ^1.6.0
+  # Networking & AI
+  google_generative_ai: ^0.2.2
+  flutter_dotenv: ^5.1.0
 
   # UI & Formatting
   intl: ^0.20.2
@@ -1261,12 +1202,12 @@ flutter:
 |------|------------|
 | API key exposure in code | Store in environment variable, not committed to Git |
 | API key in APK | For demo: acceptable risk; Production: use backend proxy |
-| Unauthorized API usage | Rate limiting via Anthropic dashboard |
+| Unauthorized API usage | Rate limiting via Google AI Studio dashboard |
 
 **Environment Variable Setup:**
 ```bash
 # .env (DO NOT COMMIT)
-ANTHROPIC_API_KEY=sk-ant-api03-xxxxxxxxxxxxx
+GEMINI_API_KEY=AIzaSy...xxxxxxxxxxxxx
 
 # Load in app (using flutter_dotenv or compile-time config)
 ```
@@ -1341,7 +1282,7 @@ flutter pub get
 **5. Create Environment File (Optional - for live AI):**
 ```bash
 # Create .env file in project root
-echo "ANTHROPIC_API_KEY=your-api-key-here" > .env
+echo "GEMINI_API_KEY=your-api-key-here" > .env
 ```
 
 **6. Run App:**
@@ -1430,8 +1371,8 @@ flutter build apk --release
 | **State Management** | Provider | 6.1.4 | Simple, low boilerplate, team familiarity |
 | **Navigation** | go_router | 17.1.0 | Declarative, deep linking support |
 | **Database** | sqflite (SQLite) | 2.4.2 | Local-first, no backend required |
-| **AI Model** | Claude Haiku 4.5 | claude-haiku-4-5 | Fast, cost-effective, safe |
-| **HTTP Client** | http | 1.6.0 | Lightweight, sufficient for demo |
+| **AI Model** | Gemini 1.5 Flash | gemini-1.5-flash | Fast, cost-effective, official Flutter SDK |
+| **HTTP Client** | google_generative_ai | 0.2.2 | Official SDK, no manual HTTP needed |
 | **Authentication** | local_auth | 3.0.0 | Platform biometrics, graceful fallback |
 | **Formatting** | intl | 0.20.2 | Currency and date formatting |
 | **UUID** | uuid | 4.5.2 | Reference ID generation |
