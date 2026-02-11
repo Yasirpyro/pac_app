@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter --version:*)",
+      "Bash(dir:*)",
+      "Bash(flutter analyze:*)",
+      "Bash(flutter test:*)",
+      "Bash(\"D:/pac_app/lib/data/services/auth_service.dart\" << 'EOF'\nimport 'package:flutter/services.dart';\nimport 'package:local_auth/local_auth.dart';\n\nclass AuthService {\n  final LocalAuthentication _localAuth = LocalAuthentication\\(\\);\n\n  Future<bool> authenticate\\(\\) async {\n    try {\n      final isAvailable = await _localAuth.canCheckBiometrics;\n      final isDeviceSupported = await _localAuth.isDeviceSupported\\(\\);\n\n      if \\(!isAvailable && !isDeviceSupported\\) {\n        // In demo mode, simulate success after a delay\n        await Future.delayed\\(const Duration\\(milliseconds: 800\\)\\);\n        return true;\n      }\n\n      return await _localAuth.authenticate\\(\n        localizedReason: 'Authenticate to confirm payment',\n        options: AuthenticationOptions\\(\n          stickyAuth: true,\n          biometricOnly: false,\n        \\),\n      \\);\n    } on PlatformException {\n      // Fallback: simulate authentication for demo\n      await Future.delayed\\(const Duration\\(milliseconds: 800\\)\\);\n      return true;\n    }\n  }\n\n  Future<bool> canAuthenticate\\(\\) async {\n    try {\n      final isAvailable = await _localAuth.canCheckBiometrics;\n      final isDeviceSupported = await _localAuth.isDeviceSupported\\(\\);\n      return isAvailable || isDeviceSupported;\n    } catch \\(e\\) {\n      return false;\n    }\n  }\n}\nEOF)",
+      "Bash(\"D:/pac_app/lib/data/services/auth_service.dart\" << 'EOF'\nimport 'package:flutter/services.dart';\nimport 'package:local_auth/local_auth.dart';\n\nclass AuthService {\n  final LocalAuthentication _localAuth = LocalAuthentication\\(\\);\n\n  Future<bool> authenticate\\(\\) async {\n    try {\n      final isAvailable = await _localAuth.canCheckBiometrics;\n      final isDeviceSupported = await _localAuth.isDeviceSupported\\(\\);\n\n      if \\(!isAvailable && !isDeviceSupported\\) {\n        // In demo mode, simulate success after a delay\n        await Future.delayed\\(const Duration\\(milliseconds: 800\\)\\);\n        return true;\n      }\n\n      return await _localAuth.authenticate\\(\n        localizedReason: 'Authenticate to confirm payment',\n      \\);\n    } on PlatformException {\n      // Fallback: simulate authentication for demo\n      await Future.delayed\\(const Duration\\(milliseconds: 800\\)\\);\n      return true;\n    }\n  }\n\n  Future<bool> canAuthenticate\\(\\) async {\n    try {\n      final isAvailable = await _localAuth.canCheckBiometrics;\n      final isDeviceSupported = await _localAuth.isDeviceSupported\\(\\);\n      return isAvailable || isDeviceSupported;\n    } catch \\(e\\) {\n      return false;\n    }\n  }\n}\nEOF)",
+      "WebSearch",
+      "Bash(flutter pub add google_generative_ai)",
+      "Bash(git init)",
+      "Bash(git add .)",
+      "Bash(git commit -m \"Migrate AI service to Gemini 1.5 Flash and configure env variables\")"
+    ]
+  }
+}

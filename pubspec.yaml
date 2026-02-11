@@ -1,0 +1,51 @@
+name: pac_app
+description: Payment Assurance Copilot - PROCOM '26 Hackathon
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.10.0 <4.0.0'
+  flutter: '>=3.38.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State Management
+  provider: ^6.1.4
+
+  # Navigation
+  go_router: ^17.1.0
+
+  # Database & Persistence
+  sqflite: ^2.4.2
+  path_provider: ^2.1.5
+  path: ^1.9.0
+  shared_preferences: ^2.5.4
+
+  # Networking (for AI API)
+  http: ^1.6.0
+
+  # UI & Formatting
+  intl: ^0.20.2
+
+  # Utilities
+  uuid: ^4.5.2
+
+  # Authentication (mock biometric)
+  local_auth: ^3.0.0
+
+  # Material Icons
+  cupertino_icons: ^1.0.8
+  flutter_dotenv: ^6.0.0
+  google_generative_ai: ^0.4.7
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - .env
