@@ -27,7 +27,7 @@
 -   **State Management:** Provider 6.1.4
 -   **Routing:** GoRouter 17.1.0
 -   **Local Storage:** SQLite (sqflite 2.4.2)
--   **AI Integration:** Anthropic Claude API (simulated/cached for demo)
+-   **AI Integration:** Google Gemini 2.5 Flash API (simulated/cached for demo)
 
 ## Getting Started
 

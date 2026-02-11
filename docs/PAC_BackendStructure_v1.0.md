@@ -62,7 +62,7 @@ PAC follows a **Clean Architecture** approach with clear separation of concerns:
 │         │                        │                        │            │
 │  ┌──────┴──────┐         ┌───────┴───────┐        ┌───────┴───────┐   │
 │  │    DAOs     │         │   Services    │        │  API Client   │   │
-│  │  (SQLite)   │         │  (Business)   │        │  (Anthropic)  │   │
+│  │  (SQLite)   │         │  (Business)   │        │   (Gemini)    │   │
 │  └──────┬──────┘         └───────────────┘        └───────────────┘   │
 │         │                                                              │
 │  ┌──────┴──────┐                                                       │

@@ -11,7 +11,8 @@
       "Bash(flutter pub add google_generative_ai)",
       "Bash(git init)",
       "Bash(git add .)",
-      "Bash(git commit -m \"Migrate AI service to Gemini 1.5 Flash and configure env variables\")"
+      "Bash(git commit -m \"Migrate AI service to Gemini 2.5 Flash and configure env variables\")",
+      "Bash(gh auth status)"
     ]
   }
 }
