@@ -12,6 +12,8 @@ class PaymentSuccessScreen extends StatelessWidget {
   final double amount;
   final String payeeName;
   final DateTime scheduledDate;
+  final bool isPayNow;
+  final bool isQueued;
 
   const PaymentSuccessScreen({
     super.key,
@@ -19,10 +21,16 @@ class PaymentSuccessScreen extends StatelessWidget {
     required this.amount,
     required this.payeeName,
     required this.scheduledDate,
+    this.isPayNow = false,
+    this.isQueued = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    String title = 'Payment Scheduled!';
+    if (isPayNow) title = 'Payment Completed!';
+    if (isQueued) title = 'Payment Queued';
+
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -36,23 +44,23 @@ class PaymentSuccessScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 decoration: BoxDecoration(
-                  color: AppColors.successLight,
+                  color: isQueued ? AppColors.warningLight : AppColors.successLight,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.check_circle,
+                child: Icon(
+                  isQueued ? Icons.hourglass_top : Icons.check_circle,
                   size: 80,
-                  color: AppColors.success,
+                  color: isQueued ? AppColors.warning : AppColors.success,
                 ),
               ),
 
               AppSpacing.verticalLG,
 
               Text(
-                'Payment Scheduled!',
+                title,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: AppColors.success,
+                  color: isQueued ? AppColors.warning : AppColors.success,
                 ),
               ),
 
@@ -74,12 +82,28 @@ class PaymentSuccessScreen extends StatelessWidget {
 
               AppSpacing.verticalSM,
 
-              Text(
-                'Scheduled for ${Formatters.formatDate(scheduledDate)}',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppColors.textSecondary,
+              if (!isPayNow && !isQueued)
+                Text(
+                  'Scheduled for ${Formatters.formatDate(scheduledDate)}',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
                 ),
-              ),
+              if (isPayNow)
+                 Text(
+                  'Paid on ${Formatters.formatDate(DateTime.now())}',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              if (isQueued)
+                 Text(
+                  'Queued for processing when maintenance ends',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
 
               AppSpacing.verticalLG,
 
@@ -116,14 +140,19 @@ class PaymentSuccessScreen extends StatelessWidget {
 
               // Action buttons
               PrimaryButton(
-                label: 'Return Home',
-                icon: Icons.home,
-                onPressed: () => context.go('/home'),
+                label: 'View Pending Payments',
+                icon: Icons.checklist,
+                onPressed: () => context.go('/urgent'),
               ),
               AppSpacing.verticalSM,
               SecondaryButton(
-                label: 'View All Bills',
-                onPressed: () => context.go('/bills'),
+                label: 'View Balance',
+                onPressed: () => context.push('/settings/cashflow'),
+              ),
+              AppSpacing.verticalSM,
+              TextButton(
+                onPressed: () => context.go('/home'),
+                child: const Text('Return Home'),
               ),
 
               AppSpacing.verticalLG,

@@ -44,11 +44,34 @@ class PaymentDao {
     return await db.insert(DatabaseConstants.tablePayments, payment.toMap());
   }
 
+  Future<int> insertPaymentTxn(DatabaseExecutor txn, PaymentModel payment) {
+    return txn.insert(DatabaseConstants.tablePayments, payment.toMap());
+  }
+
   Future<int> updatePaymentStatus(int id, String status) async {
     final db = await _db;
     return await db.update(
       DatabaseConstants.tablePayments,
       {'status': status},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<int> updatePaymentStatusTxn(DatabaseExecutor txn, String referenceId, String status) {
+    return txn.update(
+      DatabaseConstants.tablePayments,
+      {'status': status},
+      where: 'reference_id = ?',
+      whereArgs: [referenceId],
+    );
+  }
+
+
+  Future<int> deletePayment(int id) async {
+    final db = await _db;
+    return await db.delete(
+      DatabaseConstants.tablePayments,
       where: 'id = ?',
       whereArgs: [id],
     );
@@ -62,7 +85,9 @@ class PaymentDao {
       'WHERE scheduled_date = ? AND status IN (?, ?)',
       [dateStr, 'Scheduled', 'Queued'],
     );
-    return (result.first['total'] as num).toDouble();
+    final value = result.first['total'];
+    if (value == null) return 0.0;
+    return (value as num).toDouble();
   }
 
   Future<List<PaymentModel>> getQueuedPayments() async {

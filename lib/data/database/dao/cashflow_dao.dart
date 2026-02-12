@@ -8,13 +8,20 @@ class CashflowDao {
 
   Future<CashflowInputModel> getCashflowInputs() async {
     final db = await _db;
+    return _getCashflowOn(db);
+  }
+
+  Future<CashflowInputModel> getCashflowInputsTxn(DatabaseExecutor txn) {
+    return _getCashflowOn(txn);
+  }
+
+  Future<CashflowInputModel> _getCashflowOn(DatabaseExecutor db) async {
     final result = await db.query(
       DatabaseConstants.tableCashflowInputs,
       where: 'id = ?',
       whereArgs: [1],
     );
     if (result.isEmpty) {
-      // Return defaults if not found
       return CashflowInputModel(
         currentBalance: 2800.0,
         nextPaydayDate: DateTime.now().add(const Duration(days: 7)),
@@ -38,6 +45,14 @@ class CashflowDao {
 
   Future<int> updateBalance(double balance) async {
     final db = await _db;
+    return _updateBalanceOn(db, balance);
+  }
+
+  Future<int> updateBalanceTxn(DatabaseExecutor txn, double balance) {
+    return _updateBalanceOn(txn, balance);
+  }
+
+  Future<int> _updateBalanceOn(DatabaseExecutor db, double balance) async {
     return await db.update(
       DatabaseConstants.tableCashflowInputs,
       {

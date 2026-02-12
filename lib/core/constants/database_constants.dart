@@ -1,6 +1,6 @@
 class DatabaseConstants {
   static const String databaseName = 'pac_app.db';
-  static const int databaseVersion = 1;
+  static const int databaseVersion = 2;
 
   // Table names
   static const String tableBills = 'bills';
@@ -9,4 +9,5 @@ class DatabaseConstants {
   static const String tableCashflowInputs = 'cashflow_inputs';
   static const String tableSettings = 'settings';
   static const String tableBillHistory = 'bill_history';
+  static const String tableReminders = 'reminders';
 }

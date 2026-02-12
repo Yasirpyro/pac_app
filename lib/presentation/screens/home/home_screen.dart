@@ -71,6 +71,132 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
               ),
 
+              // Queued Payments Review (Post-Maintenance)
+              Consumer<BillsProvider>(
+                builder: (context, bills, _) {
+                  final queued = bills.queuedBills;
+                  if (queued.isEmpty) return const SizedBox.shrink();
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.maintenanceLight,
+                        borderRadius: AppRadius.cardRadius,
+                        border: Border.all(color: AppColors.maintenance),
+                      ),
+                      child: Padding(
+                        padding: AppSpacing.cardPadding,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.playlist_add_check, color: AppColors.maintenance),
+                                AppSpacing.horizontalSM,
+                                Text(
+                                  'Queued payment intents',
+                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.maintenance,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            AppSpacing.verticalSM,
+                            Text(
+                              'You queued these during maintenance. Review and pay now (simulated) or remove.',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                            AppSpacing.verticalMD,
+                            SizedBox(
+                              width: double.infinity,
+                              child: FilledButton.icon(
+                                onPressed: () => context.push('/maintenance/review'),
+                                icon: const Icon(Icons.rate_review),
+                                label: const Text('Review queued payments'),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: AppColors.maintenance,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+
+              // One-tap Pay for Due Today/Overdue
+              Consumer<BillsProvider>(
+                builder: (context, bills, _) {
+                  final dueNow = bills.billsDueTodayOrOverdue;
+                  if (dueNow.isEmpty) return const SizedBox.shrink();
+
+                  final bill = dueNow.first;
+                  final days = bill.dueDate.difference(DateTime.now()).inDays;
+                  final dueText = days < 0 ? 'Overdue' : 'Due Today';
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                    child: Card(
+                      elevation: 4,
+                      color: AppColors.primary,
+                      shape: RoundedRectangleBorder(borderRadius: AppRadius.cardRadius),
+                      child: InkWell(
+                        onTap: () => context.push('/payment/confirm/${bill.id}'),
+                        borderRadius: AppRadius.cardRadius,
+                        child: Padding(
+                          padding: AppSpacing.cardPadding,
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(AppSpacing.sm),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.flash_on, color: Colors.white),
+                              ),
+                              AppSpacing.horizontalMD,
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Pay in 1 tap',
+                                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                        color: Colors.white.withValues(alpha: 0.9),
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      '${bill.payeeName} ($dueText)',
+                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      Formatters.formatCurrency(bill.amount),
+                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+
               // Quick stats row
               Consumer<CashflowProvider>(
                 builder: (context, cashflow, _) {
@@ -201,24 +327,48 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       AppSpacing.verticalSM,
-                      Row(
+                      Column(
                         children: [
-                          Expanded(
+                          // Row 1: Pending (Full Width)
+                          SizedBox(
+                            width: double.infinity,
                             child: InfoCard(
-                              title: 'Total Pending',
+                              title: 'Pending Bills',
                               value: Formatters.formatCurrency(bills.totalPendingAmount),
                               icon: Icons.receipt_long,
                               color: AppColors.warning,
+                              onTap: () => context.go('/bills'),
                             ),
                           ),
-                          AppSpacing.horizontalSM,
-                          Expanded(
-                            child: InfoCard(
-                              title: 'Scheduled',
-                              value: '${bills.scheduledBills.length}',
-                              icon: Icons.schedule,
-                              color: AppColors.scheduled,
-                            ),
+                          AppSpacing.verticalSM,
+                          // Row 2: Scheduled & Reminders (Split)
+                          Row(
+                            children: [
+                              Expanded(
+                                child: InfoCard(
+                                  title: 'Scheduled',
+                                  value: '${bills.scheduledBills.length}',
+                                  icon: Icons.schedule,
+                                  color: AppColors.scheduled,
+                                  onTap: () {
+                                    // Navigate to bills tab and switch to Scheduled tab (index 2)
+                                    // Note: context.go('/bills') defaults to tab 0.
+                                    // Ideally pass a query param or extra, but for now simple nav.
+                                    context.go('/bills');
+                                  },
+                                ),
+                              ),
+                              AppSpacing.horizontalSM,
+                              Expanded(
+                                child: InfoCard(
+                                  title: 'Reminders',
+                                  value: '${bills.reminders.length}',
+                                  icon: Icons.alarm,
+                                  color: AppColors.info,
+                                  onTap: () => context.go('/bills'),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),

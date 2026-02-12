@@ -10,6 +10,9 @@ import '../../widgets/confirmation_dialog.dart';
 import '../../widgets/toast.dart';
 import '../../widgets/destructive_button.dart';
 
+import '../../../data/services/notification_service.dart';
+import '../../providers/bills_provider.dart';
+
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -82,6 +85,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
             value: settingsProvider.notificationsEnabled,
             onChanged: (value) => settingsProvider.setNotificationsEnabled(value),
             secondary: const Icon(Icons.notifications),
+          ),
+          ListTile(
+            leading: const Icon(Icons.notification_important, color: AppColors.primary),
+            title: const Text('Test Notification'),
+            subtitle: const Text('Schedule a test reminder (10s)'),
+            onTap: () async {
+               await NotificationService().scheduleTestNotification();
+               if (context.mounted) {
+                 Toast.show(context, 'Notification scheduled for 10s', type: ToastType.info);
+               }
+            },
+            trailing: const Icon(Icons.timer),
+          ),
+          ListTile(
+            leading: const Icon(Icons.warning_amber_rounded, color: AppColors.error),
+            title: const Text('Urgent Notification (Demo)'),
+            subtitle: const Text('Schedule urgent reminder (10s)'),
+            onTap: () async {
+               await NotificationService().scheduleUrgentDemoNotification();
+               if (context.mounted) {
+                 Toast.show(context, 'Urgent demo notification scheduled (10s)', type: ToastType.info);
+               }
+            },
+            trailing: const Icon(Icons.timer),
           ),
           const Divider(),
           _buildSectionHeader(context, 'Data & Privacy'),
@@ -245,6 +272,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         try {
           await settingsProvider.resetDemoData();
           if (context.mounted) {
+            // Reload and reschedule
+            final billsProvider = context.read<BillsProvider>();
+            await billsProvider.loadBills();
+            await billsProvider.rescheduleAllNotifications();
+
+            if (!context.mounted) return;
+
             Toast.show(
               context,
               'Demo data reset successfully',

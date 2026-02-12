@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import '../../providers/settings_provider.dart';
 import '../../providers/bills_provider.dart';
 import '../../../data/database/dao/payment_dao.dart';
 import '../../../data/models/payment_model.dart';
@@ -55,6 +56,19 @@ class _MaintenanceModeScreenState extends State<MaintenanceModeScreen>
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () => context.push('/settings'),
+          ),
+          TextButton(
+            onPressed: () {
+              context.read<SettingsProvider>().setMaintenanceMode(false);
+              // Router redirect will handle navigation back to home
+            },
+            child: const Text(
+              'EXIT DEMO',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
         bottom: TabBar(

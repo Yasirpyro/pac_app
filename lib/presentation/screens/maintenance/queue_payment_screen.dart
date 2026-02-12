@@ -2,16 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/bills_provider.dart';
-import '../../../data/database/dao/payment_dao.dart';
-import '../../../data/database/dao/bill_dao.dart';
-import '../../../data/database/dao/audit_log_dao.dart';
-import '../../../data/models/payment_model.dart';
+import '../../providers/payment_provider.dart';
 import '../../../data/models/bill_model.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../theme/app_radius.dart';
 import '../../../core/utils/formatters.dart';
-import '../../../core/utils/reference_generator.dart';
 import '../../widgets/primary_button.dart';
 import '../../widgets/warning_banner.dart';
 import '../../widgets/toast.dart';
@@ -26,11 +22,8 @@ class QueuePaymentScreen extends StatefulWidget {
 }
 
 class _QueuePaymentScreenState extends State<QueuePaymentScreen> {
-  final PaymentDao _paymentDao = PaymentDao();
-  final BillDao _billDao = BillDao();
-  final AuditLogDao _auditDao = AuditLogDao();
-  bool _isLoading = false;
   BillModel? _bill;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -54,57 +47,33 @@ class _QueuePaymentScreenState extends State<QueuePaymentScreen> {
       _isLoading = true;
     });
 
-    try {
-      final referenceId = ReferenceGenerator.generate();
-      final payment = PaymentModel(
-        billId: _bill!.id!,
-        referenceId: referenceId,
-        scheduledDate: DateTime.now(),
-        amount: _bill!.amount,
-        status: 'Queued',
-      );
+    // Use the provider which handles the transaction, logic, and audit logging
+    final success = await context.read<PaymentProvider>().queuePayment(billId: _bill!.id!);
 
-      await _paymentDao.insertPayment(payment);
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
 
-      await _billDao.updateBillStatus(
-        _bill!.id!,
-        'Queued',
-        referenceId: referenceId,
-      );
-
-      await _auditDao.log(
-        actionType: 'payment_queued_during_maintenance',
-        referenceId: referenceId,
-        details: {
-          'bill_id': _bill!.id,
-          'payee': _bill!.payeeName,
-          'amount': _bill!.amount,
-        },
-      );
-
-      if (mounted) {
+      if (success) {
+        // Refresh bills list to show updated status
         await context.read<BillsProvider>().loadBills();
-        if (!mounted) return;
+
+        if (mounted) {
+          Toast.show(
+            context,
+            'Payment queued successfully',
+            type: ToastType.success,
+          );
+          context.pop();
+        }
+      } else {
+        final error = context.read<PaymentProvider>().error;
         Toast.show(
           context,
-          'Payment queued successfully',
-          type: ToastType.success,
-        );
-        context.pop();
-      }
-    } catch (e) {
-      if (mounted) {
-        Toast.show(
-          context,
-          'Failed to queue payment: $e',
+          error ?? 'Failed to queue payment',
           type: ToastType.error,
         );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
       }
     }
   }

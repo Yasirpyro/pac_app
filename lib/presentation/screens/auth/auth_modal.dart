@@ -57,10 +57,7 @@ class _AuthModalState extends State<AuthModal> {
       } else {
         authenticated = await _auth.authenticate(
           localizedReason: 'Authenticate to pay ${Formatters.formatCurrency(widget.amount)}',
-          options: const AuthenticationOptions(
-            stickyAuth: true,
-            biometricOnly: false,
-          ),
+          biometricOnly: false,
         );
       }
     } catch (e) {

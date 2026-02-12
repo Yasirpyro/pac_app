@@ -98,6 +98,8 @@ class _BillListScreenState extends State<BillListScreen> with SingleTickerProvid
         itemCount: bills.length,
         itemBuilder: (context, index) {
           final bill = bills[index];
+          final reminder = context.read<BillsProvider>().reminders[bill.id];
+
           return BillCard(
             bill: {
               'id': bill.id,
@@ -106,6 +108,7 @@ class _BillListScreenState extends State<BillListScreen> with SingleTickerProvid
               'dueDate': bill.dueDate,
               'category': bill.category,
               'status': bill.status,
+              'reminderDate': reminder?.reminderDate,
             },
             onTap: () => context.push('/bills/${bill.id}'),
           );

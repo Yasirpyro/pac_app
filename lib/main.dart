@@ -64,6 +64,14 @@ class _PACAppState extends State<PACApp> {
       return;
     }
 
+    if (payload == '/urgent') {
+      final context = rootNavigatorKey.currentContext;
+      if (context != null) {
+        context.push('/urgent');
+      }
+      return;
+    }
+
     final billId = int.tryParse(payload);
     if (billId != null) {
       // Navigate to payment confirmation using the global navigator key

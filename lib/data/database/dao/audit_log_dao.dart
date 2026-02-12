@@ -24,6 +24,26 @@ class AuditLogDao {
     String? userNote,
   }) async {
     final db = await _db;
+    return _logOn(db, actionType: actionType, referenceId: referenceId, details: details, userNote: userNote);
+  }
+
+  Future<int> logTxn(
+    DatabaseExecutor txn, {
+    required String actionType,
+    String? referenceId,
+    Map<String, dynamic>? details,
+    String? userNote,
+  }) {
+    return _logOn(txn, actionType: actionType, referenceId: referenceId, details: details, userNote: userNote);
+  }
+
+  Future<int> _logOn(
+    DatabaseExecutor db, {
+    required String actionType,
+    String? referenceId,
+    Map<String, dynamic>? details,
+    String? userNote,
+  }) async {
     return await db.insert(DatabaseConstants.tableAuditLogs, {
       'action_type': actionType,
       'reference_id': referenceId,

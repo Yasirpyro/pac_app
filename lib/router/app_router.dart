@@ -11,10 +11,12 @@ import '../presentation/screens/payment/payment_confirmation_screen.dart';
 import '../presentation/screens/payment/payment_success_screen.dart';
 import '../presentation/screens/maintenance/maintenance_mode_screen.dart';
 import '../presentation/screens/maintenance/queue_payment_screen.dart';
+import '../presentation/screens/maintenance/queued_payments_review_screen.dart';
 import '../presentation/screens/settings/settings_screen.dart';
 import '../presentation/screens/settings/cashflow_inputs_screen.dart';
 import '../presentation/screens/settings/audit_log_screen.dart';
 import '../presentation/screens/settings/about_screen.dart';
+import '../presentation/screens/bills/urgent_bills_screen.dart';
 import 'app_shell.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -34,15 +36,17 @@ GoRouter createAppRouter(Listenable settingsListenable) {
         const allowedInMaintenance = [
           '/maintenance',
           '/maintenance/queue',
+          '/payment/success',
           '/settings',
           '/settings/cashflow',
           '/settings/audit-log',
           '/settings/about',
+          '/bills', // Allow viewing list
         ];
 
         final path = state.uri.path;
         final isAllowed = allowedInMaintenance.any((allowed) =>
-            path == allowed || path.startsWith('$allowed/'));
+            path == allowed || path.startsWith('$allowed/')); // Handles /bills/:id
 
         if (!isAllowed) {
           return '/maintenance';
@@ -69,12 +73,6 @@ GoRouter createAppRouter(Listenable settingsListenable) {
             ),
           ),
           GoRoute(
-            path: '/maintenance',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: MaintenanceModeScreen(),
-            ),
-          ),
-          GoRoute(
             path: '/settings',
             pageBuilder: (context, state) => const NoTransitionPage(
               child: SettingsScreen(),
@@ -83,6 +81,13 @@ GoRouter createAppRouter(Listenable settingsListenable) {
         ],
       ),
       // Full-screen routes (no bottom nav)
+      GoRoute(
+        path: '/maintenance',
+        parentNavigatorKey: rootNavigatorKey,
+        pageBuilder: (context, state) => const NoTransitionPage(
+          child: MaintenanceModeScreen(),
+        ),
+      ),
       GoRoute(
         path: '/bills/:id',
         parentNavigatorKey: rootNavigatorKey,
@@ -129,6 +134,7 @@ GoRouter createAppRouter(Listenable settingsListenable) {
             payeeName: extra['payeeName'] as String? ?? '',
             scheduledDate: extra['scheduledDate'] as DateTime? ?? DateTime.now(),
             isPayNow: extra['isPayNow'] as bool? ?? false,
+            isQueued: extra['isQueued'] as bool? ?? false,
           );
         },
       ),
@@ -139,6 +145,16 @@ GoRouter createAppRouter(Listenable settingsListenable) {
           final billId = int.parse(state.pathParameters['billId']!);
           return QueuePaymentScreen(billId: billId);
         },
+      ),
+      GoRoute(
+        path: '/maintenance/review',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const QueuedPaymentsReviewScreen(),
+      ),
+      GoRoute(
+        path: '/urgent',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const UrgentBillsScreen(),
       ),
       GoRoute(
         path: '/settings/cashflow',

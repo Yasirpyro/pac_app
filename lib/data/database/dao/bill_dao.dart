@@ -56,6 +56,14 @@ class BillDao {
 
   Future<int> updateBillStatus(int id, String status, {String? referenceId}) async {
     final db = await _db;
+    return _updateBillStatusOn(db, id, status, referenceId: referenceId);
+  }
+
+  Future<int> updateBillStatusTxn(DatabaseExecutor txn, int id, String status, {String? referenceId}) {
+    return _updateBillStatusOn(txn, id, status, referenceId: referenceId);
+  }
+
+  Future<int> _updateBillStatusOn(DatabaseExecutor db, int id, String status, {String? referenceId}) async {
     final map = <String, dynamic>{
       'status': status,
       'updated_at': DateTime.now().toIso8601String(),

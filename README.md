@@ -60,7 +60,11 @@ The app launches in **Demo Mode** by default, pre-loaded with synthetic data.
 1.  **Home Dashboard:** View bills needing attention.
 2.  **Bill Detail:** Tap a bill to see the AI recommendation and rationale.
 3.  **Maintenance Mode:** Go to Settings -> Toggle "Maintenance Mode" to see the continuity features.
-4.  **Reset:** Go to Settings -> "Reset Demo Data" to restore the initial state.
+4.  **Deep Link Demo (Wow Moment):**
+    - Ensure the app is running (foreground or background).
+    - Run `scripts/simulate_sms.bat` on Windows (or use the ADB command in `docs/DEMO_SCRIPT.md`).
+    - This simulates an external SMS link clicking through to the app during an outage.
+5.  **Reset:** Go to Settings -> "Reset Demo Data" to restore the initial state.
 
 ## Architecture
 

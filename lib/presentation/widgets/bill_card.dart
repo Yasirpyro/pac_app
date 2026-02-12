@@ -23,6 +23,7 @@ class BillCard extends StatelessWidget {
     final DateTime dueDate = bill['dueDate'] as DateTime;
     final String category = bill['category'] as String;
     final String status = bill['status'] as String;
+    final DateTime? reminderDate = bill['reminderDate'] as DateTime?;
 
     return Card(
       margin: const EdgeInsets.symmetric(
@@ -58,6 +59,22 @@ class BillCard extends StatelessWidget {
                             color: AppColors.textSecondary,
                           ),
                     ),
+                    if (reminderDate != null) ...[
+                      AppSpacing.verticalXS,
+                      Row(
+                        children: [
+                          const Icon(Icons.alarm, size: 12, color: AppColors.info),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Remind: ${Formatters.formatDate(reminderDate)}',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: AppColors.info,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),

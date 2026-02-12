@@ -22,7 +22,26 @@ class DatabaseHelper {
       path,
       version: DatabaseConstants.databaseVersion,
       onCreate: _createDB,
+      onUpgrade: _upgradeDB,
     );
+  }
+
+  Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('''
+        CREATE TABLE ${DatabaseConstants.tableReminders} (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          bill_id INTEGER NOT NULL,
+          reminder_date TEXT NOT NULL,
+          created_at TEXT DEFAULT (datetime('now')),
+          FOREIGN KEY (bill_id) REFERENCES ${DatabaseConstants.tableBills}(id) ON DELETE CASCADE
+        )
+      ''');
+
+      await db.execute('''
+        CREATE INDEX idx_reminders_bill_id ON ${DatabaseConstants.tableReminders}(bill_id)
+      ''');
+    }
   }
 
   Future<void> _createDB(Database db, int version) async {
@@ -99,6 +118,17 @@ class DatabaseHelper {
       )
     ''');
 
+    // Reminders table
+    await db.execute('''
+      CREATE TABLE ${DatabaseConstants.tableReminders} (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        bill_id INTEGER NOT NULL,
+        reminder_date TEXT NOT NULL,
+        created_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (bill_id) REFERENCES ${DatabaseConstants.tableBills}(id) ON DELETE CASCADE
+      )
+    ''');
+
     // Indexes
     await db.execute('''
       CREATE INDEX idx_bills_status ON ${DatabaseConstants.tableBills}(status)
@@ -117,6 +147,9 @@ class DatabaseHelper {
     ''');
     await db.execute('''
       CREATE INDEX idx_history_payee ON ${DatabaseConstants.tableBillHistory}(payee_name)
+    ''');
+    await db.execute('''
+      CREATE INDEX idx_reminders_bill_id ON ${DatabaseConstants.tableReminders}(bill_id)
     ''');
 
     // Seed default data
@@ -264,6 +297,12 @@ class DatabaseHelper {
       'details': '{"reset": true}',
       'user_note': 'Demo data has been reset',
     });
+  }
+
+  /// Exposes the database for transaction use in providers.
+  Future<T> transaction<T>(Future<T> Function(Transaction txn) action) async {
+    final db = await database;
+    return db.transaction(action);
   }
 
   Future<void> close() async {

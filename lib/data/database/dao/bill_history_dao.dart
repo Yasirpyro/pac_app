@@ -33,6 +33,10 @@ class BillHistoryDao {
     return await db.insert(DatabaseConstants.tableBillHistory, history.toMap());
   }
 
+  Future<int> insertHistoryTxn(DatabaseExecutor txn, BillHistoryModel history) {
+    return txn.insert(DatabaseConstants.tableBillHistory, history.toMap());
+  }
+
   Future<List<BillHistoryModel>> getAllHistory() async {
     final db = await _db;
     final result = await db.query(

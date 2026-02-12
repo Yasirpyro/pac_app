@@ -8,6 +8,7 @@ import '../../../theme/app_radius.dart';
 import '../../../data/models/bill_model.dart';
 import '../../providers/bills_provider.dart';
 import '../../providers/cashflow_provider.dart';
+import '../../providers/payment_provider.dart';
 import '../../providers/recommendation_provider.dart';
 import '../../widgets/recommendation_panel.dart';
 import '../../widgets/status_badge.dart';
@@ -15,6 +16,7 @@ import '../../widgets/primary_button.dart';
 import '../../widgets/secondary_button.dart';
 import '../../widgets/confirmation_dialog.dart';
 import '../../widgets/loading_state.dart';
+import '../../widgets/toast.dart';
 import '../../widgets/category_icon.dart';
 
 class BillDetailScreen extends StatefulWidget {
@@ -55,6 +57,51 @@ class _BillDetailScreenState extends State<BillDetailScreen> {
         _bill = bill;
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _showDatePicker(BuildContext context, BillModel bill) async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final dueDate = DateTime(bill.dueDate.year, bill.dueDate.month, bill.dueDate.day);
+
+    if (dueDate.isBefore(today)) {
+      Toast.show(context, 'Cannot set reminder for overdue bill', type: ToastType.error);
+      return;
+    }
+
+    // Default to 3 days before due date
+    var initialDate = dueDate.subtract(const Duration(days: 3));
+
+    // If default is in the past, use today
+    if (initialDate.isBefore(today)) {
+      initialDate = today;
+    }
+
+    // Ensure initial date is not after due date
+    if (initialDate.isAfter(dueDate)) {
+      initialDate = dueDate;
+    }
+
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: today,
+      lastDate: dueDate, // Can't remind after due date
+      helpText: 'Select Reminder Date',
+    );
+
+    if (pickedDate != null && mounted) {
+      // Add time (e.g. 9 AM)
+      final reminderDate = DateTime(
+        pickedDate.year,
+        pickedDate.month,
+        pickedDate.day,
+        9, 0, 0
+      );
+
+      await context.read<BillsProvider>().setReminder(bill.id!, reminderDate);
+      Toast.show(context, 'Reminder set for ${Formatters.formatDate(reminderDate)}', type: ToastType.success);
     }
   }
 
@@ -222,28 +269,163 @@ class _BillDetailScreenState extends State<BillDetailScreen> {
 
             AppSpacing.verticalLG,
 
+            // Reminder Status (if any)
+            Consumer<BillsProvider>(
+              builder: (context, billsProvider, _) {
+                final reminder = billsProvider.reminders[bill.id];
+                if (reminder != null) {
+                  return Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                    padding: AppSpacing.cardPadding,
+                    decoration: BoxDecoration(
+                      color: AppColors.infoLight,
+                      borderRadius: AppRadius.cardRadius,
+                      border: Border.all(color: AppColors.info),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.alarm, color: AppColors.info),
+                        AppSpacing.horizontalSM,
+                        Expanded(
+                          child: Text(
+                            'Reminder set for ${Formatters.formatDate(reminder.reminderDate)}',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppColors.info,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, color: AppColors.info),
+                          onPressed: () async {
+                            await context.read<BillsProvider>().removeReminder(bill.id!);
+                          },
+                          tooltip: 'Remove reminder',
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
+
             // Action buttons
-            if (bill.status == 'Pending') ...[
-              PrimaryButton(
-                label: 'Pay Now',
-                icon: Icons.payment,
-                onPressed: () {
-                  context.push('/payment/confirm/${bill.id}');
+            if (bill.status == 'Pending')
+              Consumer<BillsProvider>(
+                builder: (context, billsProvider, _) {
+                  final isFarOut = daysUntilDue > 7;
+
+                  return Column(
+                    children: [
+                      // If due > 7 days, "Set Reminder" is Primary
+                      if (isFarOut) ...[
+                        PrimaryButton(
+                          label: 'Set Reminder',
+                          icon: Icons.alarm_add,
+                          onPressed: () => _showDatePicker(context, bill),
+                        ),
+                        AppSpacing.verticalSM,
+                        SecondaryButton(
+                          label: 'Pay Now',
+                          icon: Icons.payment,
+                          onPressed: () {
+                            context.push('/payment/confirm/${bill.id}');
+                          },
+                        ),
+                      ] else ...[
+                        // Otherwise "Pay Now" is Primary
+                        PrimaryButton(
+                          label: 'Pay Now',
+                          icon: Icons.payment,
+                          onPressed: () {
+                            context.push('/payment/confirm/${bill.id}');
+                          },
+                        ),
+                        AppSpacing.verticalSM,
+                        SecondaryButton(
+                          label: 'Mark as Paid',
+                          icon: Icons.check,
+                          onPressed: () {
+                            ConfirmationDialog.show(
+                              context: context,
+                              title: 'Mark as Paid?',
+                              message: 'This will mark "${bill.payeeName}" as paid.',
+                              confirmLabel: 'Mark Paid',
+                              onConfirm: () async {
+                                await context.read<BillsProvider>().markAsPaid(bill.id!);
+                                _loadBill();
+                              },
+                            );
+                          },
+                        ),
+                      ],
+                    ],
+                  );
                 },
               ),
-              AppSpacing.verticalSM,
-              SecondaryButton(
-                label: 'Mark as Paid',
-                icon: Icons.check,
+
+            if (bill.status == 'Scheduled') ...[
+              Container(
+                 width: double.infinity,
+                 padding: AppSpacing.cardPadding,
+                 margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                 decoration: BoxDecoration(
+                   color: AppColors.surfaceVariant,
+                   borderRadius: AppRadius.cardRadius,
+                   border: Border.all(color: AppColors.scheduled),
+                 ),
+                 child: Column(
+                   children: [
+                     Row(
+                       mainAxisAlignment: MainAxisAlignment.center,
+                       children: [
+                         const Icon(Icons.schedule, color: AppColors.scheduled, size: 24),
+                         AppSpacing.horizontalSM,
+                         Text(
+                           'Payment Scheduled',
+                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                             color: AppColors.scheduled,
+                             fontWeight: FontWeight.w600,
+                           ),
+                         ),
+                       ],
+                     ),
+                     if (bill.referenceId != null) ...[
+                        AppSpacing.verticalXS,
+                        Text(
+                          'Ref: ${bill.referenceId}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                     ],
+                   ],
+                 ),
+              ),
+
+              PrimaryButton(
+                label: 'Mark as Paid (Simulate)',
+                icon: Icons.check_circle_outline,
                 onPressed: () {
-                  ConfirmationDialog.show(
+                   ConfirmationDialog.show(
                     context: context,
-                    title: 'Mark as Paid?',
-                    message: 'This will mark "${bill.payeeName}" as paid.',
-                    confirmLabel: 'Mark Paid',
+                    title: 'Complete Payment?',
+                    message: 'This will simulate the completion of the scheduled payment for "${bill.payeeName}".',
+                    confirmLabel: 'Complete',
                     onConfirm: () async {
-                      await context.read<BillsProvider>().markAsPaid(bill.id!);
-                      _loadBill();
+                      final billsProvider = context.read<BillsProvider>();
+                      final paymentProvider = context.read<PaymentProvider>();
+                      final success = await paymentProvider.completeScheduledPayment(bill.id!);
+
+                      if (!context.mounted) return;
+
+                      if (success) {
+                         _loadBill();
+                         // Also reload bills provider to update list
+                         billsProvider.loadBills();
+                      } else {
+                         Toast.show(context, paymentProvider.error ?? 'Failed to complete payment', type: ToastType.error);
+                      }
                     },
                   );
                 },

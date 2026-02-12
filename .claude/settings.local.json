@@ -12,7 +12,15 @@
       "Bash(git init)",
       "Bash(git add .)",
       "Bash(git commit -m \"Migrate AI service to Gemini 2.5 Flash and configure env variables\")",
-      "Bash(gh auth status)"
+      "Bash(gh auth status)",
+      "Bash(flutter run:*)",
+      "Bash(flutter pub add flutter_local_notifications timezone)",
+      "Bash(flutter pub add dev:flutter_local_notifications_platform_interface dev:plugin_platform_interface)",
+      "Bash(adb install -r build/app/outputs/flutter-apk/app-release.apk)",
+      "Bash(adb devices)",
+      "Bash(flutter clean)",
+      "Bash(flutter devices)",
+      "Bash(flutter build apk --debug)"
     ]
   }
 }
