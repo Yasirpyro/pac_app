@@ -2,7 +2,7 @@
 
 **JS Bank Presents PROCOM ’26 Hackathon — AI in Banking**  
 **Track:** Open Innovation (AI-powered banking solution)  
-**Team:** Hackathon Team Alpha  
+**Team:** Hackathon Team HYRX  
 **Status:** Working prototype (Demo-ready)  
 **Platform:** Flutter (Android)
 
@@ -259,9 +259,6 @@ APK output:
 ---
 
 ## 12) Credits
-Built by **Hackathon Team Alpha** for **PROCOM ’26 AI in Banking Hackathon**.
+Built by **Hackathon Team Hyrx ** for **PROCOM ’26 AI in Banking Hackathon**.
 
 ---
-
-## 13) License
-Prototype/demo submission. Add a license file if required by the event or repo policy.
